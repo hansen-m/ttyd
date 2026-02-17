@@ -56,6 +56,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"socket-owner", required_argument, NULL, 'U'},
                                         {"credential", required_argument, NULL, 'c'},
                                         {"auth-header", required_argument, NULL, 'H'},
+                                        {"auth-header-value", required_argument, NULL, 'V'},
                                         {"uid", required_argument, NULL, 'u'},
                                         {"gid", required_argument, NULL, 'g'},
                                         {"signal", required_argument, NULL, 's'},
@@ -97,8 +98,9 @@ static void print_help() {
           "    -p, --port              Port to listen (default: 7681, use `0` for random port)\n"
           "    -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
           "    -U, --socket-owner      User owner of the UNIX domain socket file, when enabled (eg: user:group)\n"
-          "    -c, --credential        Credential for basic authentication (format: username:password)\n"
+          "    -c, --credential        Credential for basic authentication (format: username:password) or set TTYD_CREDENTIAL environment variable\n"
           "    -H, --auth-header       HTTP Header name for auth proxy, this will configure ttyd to let a HTTP reverse proxy handle authentication\n"
+          "    -V, --auth-header-value HTTP Header value for auth proxy, this will require a matched value instead of just the existance of the header\n"
           "    -u, --uid               User id to run with\n"
           "    -g, --gid               Group id to run with\n"
           "    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)\n"
@@ -315,6 +317,13 @@ int main(int argc, char **argv) {
   int start = calc_command_start(argc, argv);
   server = server_new(argc, argv, start);
 
+  const char *env_credential = getenv("TTYD_CREDENTIAL");
+  if (env_credential != NULL) {
+    char b64_text[256];
+    lws_b64_encode_string(env_credential, strlen(env_credential), b64_text, sizeof(b64_text));
+    server->credential = strdup(b64_text);
+  }
+
   struct lws_context_creation_info info;
   memset(&info, 0, sizeof(info));
   info.port = 7681;
@@ -404,6 +413,9 @@ int main(int argc, char **argv) {
         break;
       case 'H':
         server->auth_header = strdup(optarg);
+        break;
+      case 'V':
+        server->auth_header_value = strdup(optarg);
         break;
       case 'u':
         info.uid = parse_int("uid", optarg);

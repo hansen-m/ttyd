@@ -182,7 +182,21 @@ static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
 
 static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
   if (server->auth_header != NULL) {
-    return lws_hdr_custom_copy(wsi, pss->user, sizeof(pss->user), server->auth_header, strlen(server->auth_header)) > 0;
+    int n = lws_hdr_custom_copy(
+        wsi,
+        pss->user,
+        sizeof(pss->user),
+        server->auth_header,
+        strlen(server->auth_header)
+    );
+
+    if (n <= 0)
+        return false; /* header missing */
+
+    if (server->auth_header_value == NULL)
+        return true;  /* only existence required */
+
+        return strcmp(pss->user, server->auth_header_value) == 0;
   }
 
   if (server->credential != NULL) {
