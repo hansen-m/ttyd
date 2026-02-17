@@ -152,6 +152,7 @@ static void print_config() {
     lwsl_notice("  websocket: %s\n", endpoints.ws);
   }
   if (server->auth_header != NULL) lwsl_notice("  auth header: %s\n", server->auth_header);
+  if (server->auth_header_value != NULL) lwsl_notice("  auth header value: %s\n", server->auth_header_value);
   if (server->check_origin) lwsl_notice("  check origin: true\n");
   if (server->url_arg) lwsl_notice("  allow url arg: true\n");
   if (server->max_clients > 0) lwsl_notice("  max clients: %d\n", server->max_clients);
